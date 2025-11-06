@@ -13,7 +13,7 @@ Creo la cartella home dell'utente a cui verrà associato un suo specifico projec
 ```
 mkdir /home/$UNAME
 chown $UNAME:$UNAME -R /home/$UNAME
-chmod 750 -R /home/$UNAME
+chmod 700 -R /home/$UNAME
 ```
 
 Configuro i projects per xfs. Se i file di configurazione _/etc/projects_ e _/etc/projid_ ancora non esistono, verranno creati: nel primo, aggiungo ID e path del progetto; nel secondo, si associa un nome del progetto all'ID. Per semplicità, utilizzo lo stesso _user ID_ come ID da assegnare al progetto della home del singolo utente.
