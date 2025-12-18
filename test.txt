@@ -1,2 +1,3 @@
 Il file è stato creato.
 Il file è stato modificato in locale.
+Il file è stato modificato in remoto.
