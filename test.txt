@@ -1,3 +1,1 @@
-Creato in locale.
-Modificato in locale.
-Modificato in remoto.
+Il file è stato creato.
