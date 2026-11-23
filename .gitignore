@@ -1,0 +1,8 @@
+# Specific configuration files
+*infomedstorage1*
+*infomedstorage*
+*ebrains*
+*corino*
+
+# Secret files
+*.secret*
