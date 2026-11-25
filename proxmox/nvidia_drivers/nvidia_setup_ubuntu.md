@@ -44,7 +44,7 @@ podman --version
 # Command to run if podman version >=5.1.0
 sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
 # Command to run if podman version is <5.1.0. This alternative generates a CDI manifest that is still compatible with that version.
-# Note: Podman is kept to 4.9.3 in Ubuntu 24.04 LTS. Upgrading to 26.01 LTS solves this issue.
+# Note: Podman is kept to 4.9.3 in Ubuntu 24.04 LTS. Upgrading to 26.04 LTS solves this issue.
 sudo nvidia-ctk cdi generate --feature-flag no-additional-gids-for-device-nodes --output=/etc/cdi/nvidia.yaml
 ```
 

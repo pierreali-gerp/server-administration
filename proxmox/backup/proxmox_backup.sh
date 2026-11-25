@@ -32,7 +32,13 @@ BACKUP_DNSMASQ=1 #1: yes, 0: no
 
 # RSYNC OPTIONS
 A_MOD_FLAGS="-rltD" #The -a flag includes -rlptgoD, but one might not want to preserve all of those when transferring to a
-                    #network storage (e.g., this is useful to let Synology NASs keeep default shared folder permissions)
+                    #network storage (e.g., disabling -p, -g, and -o is useful to let Synology NASs keep default shared folder
+                    #permissions)
+PERM_FLAGS="--no-p --no-g" #As suggested in rsync manual, this should stress mantaining the destination
+                           #permissions and group ownership (changing the -a flag as made above didn't bring correct
+                           #inheritance of Synology's ACLs). However, it still doesn't seem to guarantee Synology's ACL
+                           #are kept in the destination folder...
+FUNC_FLAGS="-z --progress" #Add --dry-run here for testing
 
 #--------------------(do not change anything below this line)--------------------
 
@@ -120,11 +126,10 @@ fi
 # Note: The :: syntax identifies an rsync daemon module, not an ordinary filesystem path or SSH destination.
 #       While "::" is compatible with Synology NASs (when "rsync" transfers are enabled in settings), the simpler ":" is
 #       the one to use for SSH/SFTP storage targets.
-#       For testing, add --dry-run
 echo "--------------------------------------------------------------------------"
 echo "INFO: Starting network files backup with rsync..."
 
-rsync $A_MOD_FLAGS -z --progress \
+rsync $A_MOD_FLAGS $PERM_FLAGS $FUNC_FLAGS \
       -e "sshpass -f $TS_PASS ssh" \
       "$NETWORK_FILES_TEMP_PATH/" \
       $TS_USER@$TS_IP::"$TS_BASE_PATH/Network_backup/"
@@ -191,23 +196,24 @@ if [[ ! -d "$PVE_VM_BACKUP_PATH" ]]; then
 fi
 
 # Copy VM backups to target storage
-# Notes: * --delete-after deletes VM backups from the destination that do not exist in source directory to avoid wasting storage.
-#          Again, we are counting on target storage snapshots with a sensible retention policy. Deletion is performed after
-#          successful data transfer.
+# Notes: * --delete-delay deletes VM backups from the destination that do not exist in source directory to avoid wasting storage.
+#          Again, we are counting on target storage snapshots with a sensible retention policy. Using --delete-delay instead of the
+#          simpler --delete, the evaluation of which files should be removed is done at the beginning, but we ensure that the
+#          actual deletion is performed after the data transfer is completed (i.e., if the rsync process crashes for any reason,
+#          and the data transfer halts, older backups are preserved).
 #        * --itemize-changes is added to make transfers and deletions transparent on the produced log.
-#        * Before using rsync with --delete-after, we check that at least one backup file is present in PVE backup folder; if
+#        * Before using rsync with --delete-delay, we check that at least one backup file is present in PVE backup folder; if
 #          there isn't any, a wrong PVE_VM_BACKUP_PATH might have been defined by the user, and we need to protect all files in the
 #          backup destination path from being removed! To perform the check we can use "compgen":
 #          compgen -G returns success if at least one matching file exists, and failure otherwise. The > /dev/null discards its
 #          output because we only need the exit status.
-#        * For testing, add --dry-run to the rsync command
 if ! compgen -G "$PVE_VM_BACKUP_PATH/*.vma.*" > /dev/null; then
     echo "WARNING: No VM backup archives found. Skipping backup with rsync to prevent remote deletions."
 else
     echo "-------------------------------------------------------------------------------------------"
     echo "INFO: Starting VMs backup with rsync..."
-    rsync $A_MOD_FLAGS -z --progress \
-        --itemize-changes --delete-after \
+    rsync $A_MOD_FLAGS $PERM_FLAGS $FUNC_FLAGS \
+        --itemize-changes --delete-delay \
         -e "sshpass -f $TS_PASS ssh" \
         "$PVE_VM_BACKUP_PATH/" \
         $TS_USER@$TS_IP::"$TS_BASE_PATH/dump/"
@@ -235,8 +241,7 @@ else
 fi
 
 # Copy log file to target storage
-# Note: For testing, add --dry-run
-rsync $A_MOD_FLAGS -z --progress \
+rsync $A_MOD_FLAGS $PERM_FLAGS $FUNC_FLAGS \
       -e "sshpass -f $TS_PASS ssh" \
       "${LOG_PATH}/${LOG_FNAME}" \
       $TS_USER@$TS_IP::"$TS_BASE_PATH/BackupLogs/"
