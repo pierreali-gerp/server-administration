@@ -10,6 +10,8 @@ set -o pipefail
 
 # IMPORTANT NOTES BEFORE RUNNING:
 #  - Remember to make this script executable with "chmod +x" before running;
+#  - Remember to set proper permissions on the password file (.secret) with "chmod 600" before running;
+#  - This script requires "sshpass" to run; you need to install it with "apt install sshpass" beforehand;
 #  - This script can be run as a NON-ROOT user on non-heavily-customized Proxmox
 #    configurations, and you should always do so!!!
 
@@ -68,6 +70,12 @@ fi
 # Check for password file existence to ensure rsync commands can run
 if [[ ! -r "$TS_PASS" ]]; then
     echo "ERROR: Rsync password file is missing or unreadable."
+    exit 1
+fi
+
+# Check if sshpass is installed (we need it for rsync authentication through SSH)
+if ! command -v sshpass >/dev/null 2>&1; then
+    echo "ERROR: sshpass is missing. Run 'apt install sshpass' as root."
     exit 1
 fi
 
